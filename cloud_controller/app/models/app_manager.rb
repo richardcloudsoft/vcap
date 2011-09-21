@@ -364,7 +364,9 @@ class AppManager
             :index => index,
             :state => instance_json[:state],
             :since => instance_json[:state_timestamp],
-            :debug_port => instance_json[:debug_port]
+            :debug_port => instance_json[:debug_port],
+            :dea => instance_json[:dea],
+            :instance => instance_json[:instance]
           }
         end
       end

@@ -291,9 +291,10 @@ class AppsController < ApplicationController
   def update_app_instances(app)
     return 0 unless body_params && body_params[:instances]
     updated_instances = body_params[:instances].to_i
-    current_instances = app.instances
+    current_instances = app.instance_id_array
     app.instances = updated_instances
-    updated_instances - current_instances
+    { :add => app.instance_id_array - current_instances,
+      :remove => current_instances - app.instance_id_array }
   end
 
   def error_on_lock_mismatch(app)

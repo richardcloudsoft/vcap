@@ -186,13 +186,13 @@ class AppManager
     end
   end
 
-  def start_instances(start_message, index, max_to_start)
+  def start_instances(start_message, new_ids)
     EM.next_tick do
       f = Fiber.new do
         message = start_message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:debug] = @app.metadata[:debug]
-        (index...max_to_start).each do |i|
+        new_ids.each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
           if dea_id
@@ -214,7 +214,7 @@ class AppManager
       message = new_message
       # Start a single instance on staging failure to display staging errors to user
       num_to_start = app.staging_failed? ? 1 : app.instances
-      start_instances(message, 0, num_to_start)
+      start_instances(message, 0...num_to_start)
     end
   end
 
@@ -222,13 +222,17 @@ class AppManager
     stop_all
   end
 
+  # Add/remove instances. 'delta' is a hashtable with two elements:
+  # delta[:add] is an array of integers - create new instances with these ids
+  # delta[:remove] is an array of integers - instances with these ids should be stopped
   def change_running_instances(delta)
     return unless app.started?
     message = new_message
-    if (delta > 0)
-      start_instances(message, app.instances - delta, app.instances)
-    else
-      indices = (app.instances...(app.instances - delta)).collect { |i| i }
+    if (delta[:add])
+      start_instances(message, delta[:add])
+    end
+    if (delta[:remove])
+      indices = delta[:remove]
       stop_instances(indices)
     end
   end

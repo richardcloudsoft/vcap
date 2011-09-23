@@ -320,8 +320,7 @@ class AppManager
   # and 'debug_port' for all instances running, or trying to run, the app.
   def find_instances
     return [] unless app.started?
-    instances = app.instances
-    indices = []
+    response = {}
 
     message = {
       :droplet => app.id,
@@ -334,8 +333,8 @@ class AppManager
     if flapping_indices && flapping_indices[:indices]
       flapping_indices[:indices].each do |entry|
         index = entry[:index]
-        if index >= 0 && index < instances
-          indices[index] = {
+        if index >= 0 && index < next_instance_id
+          response[index] = {
             :index => index,
             :state => :FLAPPING,
             :since => entry[:since]
@@ -350,7 +349,7 @@ class AppManager
       :states => ['STARTING', 'RUNNING']
     }
 
-    expected_running_instances = instances - indices.length
+    expected_running_instances = app.instance_id_array.length - response.length
 
     if expected_running_instances > 0
       opts = { :timeout => 2, :expected => expected_running_instances }
@@ -358,9 +357,9 @@ class AppManager
       running_instances.each do |instance|
         instance_json = Yajl::Parser.parse(instance, :symbolize_keys => true) rescue nil
         next unless instance_json
-        index = instance_json[:index] || instances
-        if index >= 0 && index < instances
-          indices[index] = {
+        index = instance_json[:index] || app.next_instance_id
+        if index >= 0 && index < app.next_instance_id
+          response[index] = {
             :index => index,
             :state => instance_json[:state],
             :since => instance_json[:state_timestamp],
@@ -372,13 +371,13 @@ class AppManager
       end
     end
 
-    instances.times do |index|
-      index_entry = indices[index]
+    app.instance_id_array.each do |index|
+      index_entry = response[index]
       unless index_entry
-        indices[index] = { :index => index, :state => :DOWN, :since => Time.now.to_i }
+        response[index] = { :index => index, :state => :DOWN, :since => Time.now.to_i }
       end
     end
-    indices
+    response.values
   end
 
   def find_crashes

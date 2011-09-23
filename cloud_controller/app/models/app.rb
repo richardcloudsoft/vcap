@@ -450,6 +450,41 @@ class App < ActiveRecord::Base
     AppManager.new(self).find_crashes
   end
 
+  def instance_id_array
+    instance_ids.split(';').map do |id| id.to_i end
+  end
+
+  def instance_id_array=(arr)
+    self.instance_ids = arr.join(';')
+  end
+
+  def instances
+    instance_id_array.length
+  end
+
+  def instances=(newval)
+    delta = newval - instances
+    while delta > 0
+      add_instance_id(next_instance_id)
+      self.next_instance_id += 1
+      delta -= 1
+    end
+    if delta < 0
+      arr = instance_id_array
+      arr[delta,-delta] = []
+      self.instance_id_array = arr
+      self.next_instance_id = arr.length
+    end
+  end
+
+  def add_instance_id(id)
+    if instance_ids.length > 0
+      self.instance_ids += ";#{id}"
+    else
+      self.instance_ids = id.to_s
+    end
+  end
+
   def find_instances
     AppManager.new(self).find_instances
   end

@@ -259,7 +259,7 @@ class AppsController < ApplicationController
     elsif app.started?
       # Instances (up or down) and uris we will handle in place, since it does not
       # involve staging changes.
-      if changed.include?('instances')
+      if changed.include?('instance_ids')
         manager.change_running_instances(delta_instances)
         manager.updated
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110707170643) do
+ActiveRecord::Schema.define(:version => 20110922154007) do
 
   create_table "app_collaborations", :force => true do |t|
     t.integer  "app_id"
@@ -27,7 +27,6 @@ ActiveRecord::Schema.define(:version => 20110707170643) do
     t.string   "framework"
     t.string   "runtime"
     t.integer  "memory",              :default => 256
-    t.integer  "instances",           :default => 0
     t.string   "state",               :default => "STOPPED"
     t.string   "package_state",       :default => "PENDING"
     t.string   "package_hash"
@@ -41,6 +40,8 @@ ActiveRecord::Schema.define(:version => 20110707170643) do
     t.integer  "disk_quota",          :default => 2048
     t.integer  "lock_version",        :default => 0
     t.integer  "run_count",           :default => 0,         :null => false
+    t.integer  "next_instance_id",    :default => 0,         :null => false
+    t.string   "instance_ids",        :default => "",        :null => false
   end
 
   add_index "apps", ["framework"], :name => "index_apps_on_framework"

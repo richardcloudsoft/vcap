@@ -186,13 +186,14 @@ class AppManager
     end
   end
 
-  def start_instances(start_message, index, max_to_start)
+  # Starts new instances, with indices numbered from lo_index to hi_index inclusive
+  def start_instances(start_message, lo_index, hi_index)
     EM.next_tick do
       f = Fiber.new do
         message = start_message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:debug] = @app.metadata[:debug]
-        (index...max_to_start).each do |i|
+        (lo_index..hi_index).each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
           if dea_id
@@ -214,7 +215,7 @@ class AppManager
       message = new_message
       # Start a single instance on staging failure to display staging errors to user
       num_to_start = app.staging_failed? ? 1 : app.instances
-      start_instances(message, 0, num_to_start)
+      start_instances(message, 0, num_to_start - 1)
     end
   end
 
@@ -222,13 +223,19 @@ class AppManager
     stop_all
   end
 
+  # add/remove instances. Note that app.instances has *already* been updated to show the desired number of instances.
+  # delta is the difference between what app.instances used to be and what it is now.
   def change_running_instances(delta)
     return unless app.started?
     message = new_message
     if (delta > 0)
-      start_instances(message, app.instances - delta, app.instances)
+      lo_index = app.instances - delta
+      hi_index = app.instances - 1
+      start_instances(message, lo_index, hi_index)
     else
-      indices = (app.instances...(app.instances - delta)).collect { |i| i }
+      lo_index = app.instances
+      hi_index = app.instances - delta - 1
+      indices = (lo_index..hi_index).collect { |i| i }
       stop_instances(indices)
     end
   end
